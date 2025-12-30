@@ -8,6 +8,8 @@ class MissiveRecipient(BaseModel):
 class MissiveMessage(BaseModel):
     id: str
     body: str
+    from_handle: Optional[str] = None
+    to_handle: Optional[List[str]] = None
     recipient: Optional[MissiveRecipient] = None
 
 class MissiveChannel(BaseModel):
@@ -16,7 +18,7 @@ class MissiveChannel(BaseModel):
 class MissiveOutgoingPayload(BaseModel):
     type: str
     message: MissiveMessage
-    channel: MissiveChannel
+    channel: Optional[MissiveChannel] = None
 
 # Sendblue Schemas
 class SendblueIncomingPayload(BaseModel):

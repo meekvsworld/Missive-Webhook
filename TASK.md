@@ -12,4 +12,7 @@
 
 ## Discovered During Work
 - [x] Fix Vercel runtime configuration in vercel.json <!-- id: 7 -->
+- [x] Improve app resilience for Vercel startup <!-- id: 8 -->
+- [x] Fix Python import paths for Vercel deployment <!-- id: 9 -->
+- [x] Make Missive outgoing handler more flexible with payload parsing <!-- id: 10 -->
 
