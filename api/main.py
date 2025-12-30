@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Add the project root to sys.path so 'app' module can be found when running on Vercel
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI, Depends, Request, HTTPException
 from app.models.schemas import MissiveOutgoingPayload, SendblueIncomingPayload
 from app.services.sendblue import sendblue_client
@@ -21,6 +27,10 @@ async def handle_missive_outgoing(
     _=Depends(verify_missive_signature)
 ):
     """Handles outgoing messages from Missive and sends them via Sendblue."""
+    if not settings.sendblue_api_key or not settings.sendblue_api_secret:
+        logger.error("Sendblue API credentials missing")
+        raise HTTPException(status_code=500, detail="Sendblue credentials not configured")
+
     logger.info(f"Received outgoing message from Missive: {payload.message.id}")
     
     if payload.type != "message_sent":
@@ -49,6 +59,10 @@ async def handle_sendblue_incoming(
     _=Depends(verify_sendblue_secret)
 ):
     """Handles incoming messages from Sendblue and pushes them to Missive."""
+    if not settings.missive_api_token or not settings.missive_channel_id:
+        logger.error("Missive API credentials missing")
+        raise HTTPException(status_code=500, detail="Missive credentials not configured")
+
     logger.info(f"Received incoming message from Sendblue from: {payload.number}")
     
     # We only care about RECEIVED messages (not our own outbound messages if Sendblue loops them back)
