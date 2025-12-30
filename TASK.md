@@ -11,5 +11,5 @@
 - [x] Add Pytest unit tests <!-- id: 6 -->
 
 ## Discovered During Work
-- [ ] ...
+- [x] Fix Vercel runtime configuration in vercel.json <!-- id: 7 -->
 
