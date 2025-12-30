@@ -9,6 +9,7 @@ from app.models.schemas import MissiveOutgoingPayload, SendblueIncomingPayload
 from app.services.sendblue import sendblue_client
 from app.services.missive import missive_client
 from app.utils.security import verify_missive_signature, verify_sendblue_secret
+from app.utils.config import settings
 import logging
 
 # Configure logging
