@@ -17,33 +17,35 @@ class MissiveClient:
             "Content-Type": "application/json",
         }
 
-    async def push_messages(self, messages: List[dict], channel_id: Optional[str] = None) -> dict:
+    async def push_messages(self, messages: List[dict]) -> dict:
         """Pushes messages to Missive.
 
         Args:
             messages (List[dict]): List of message objects to push.
-            channel_id (Optional[str]): The channel ID to push to.
 
         Returns:
             dict: The API response.
         """
+        # Global posts endpoint
         url = f"{self.base_url}/posts"
-        cid = channel_id or settings.missive_channel_id
         
-        # For the global /posts endpoint, 'posts' must be a key-value object
-        # where keys are the external_ids and each object MUST contain the channel_id.
-        posts_map = {}
+        # Missive expects a JSON object with a "posts" key.
+        # The value of "posts" must be a dictionary where:
+        # - The keys are the external_ids.
+        # - The values are the message objects (which must include channel_id).
+        posts_dict = {}
         for msg in messages:
-            # Ensure channel_id is inside the message
             if "channel_id" not in msg:
-                msg["channel_id"] = cid
+                msg["channel_id"] = settings.missive_channel_id
             
-            # Use external_id as the key
-            ext_id = msg.get("external_id") or f"msg_{int(time.time())}"
-            posts_map[ext_id] = msg
+            ext_id = msg.get("external_id")
+            if not ext_id:
+                ext_id = f"sb_{int(time.time())}"
+            
+            posts_dict[ext_id] = msg
         
-        payload = {"posts": posts_map}
-        logger.info(f"Pushing to Missive global /posts: {payload}")
+        payload = {"posts": posts_dict}
+        logger.info(f"Final push to Missive global /posts: {payload}")
         
         async with httpx.AsyncClient() as client:
             try:
