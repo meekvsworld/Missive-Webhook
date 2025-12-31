@@ -17,30 +17,23 @@ class MissiveClient:
             "Content-Type": "application/json",
         }
 
-    async def push_messages(self, messages: List[dict]) -> dict:
+    async def push_messages(self, messages: List[dict], channel_id: Optional[str] = None) -> dict:
         """Pushes messages to Missive.
 
         Args:
             messages (List[dict]): List of message objects to push.
+            channel_id (Optional[str]): The channel ID to push to.
 
         Returns:
             dict: The API response.
         """
-        url = f"{self.base_url}/posts"
+        cid = channel_id or settings.missive_channel_id
+        # Use the channel-specific endpoint for custom channels
+        url = f"{self.base_url}/channels/{cid}/posts"
         
-        # Missive expects 'posts' to be a key-value object (dict), 
-        # where keys are the external_ids.
-        posts_map = {}
-        for msg in messages:
-            if "channel_id" not in msg:
-                msg["channel_id"] = settings.missive_channel_id
-            
-            # Use external_id as the key, falling back to a timestamp if missing
-            ext_id = msg.get("external_id") or f"msg_{int(time.time())}"
-            posts_map[ext_id] = msg
-        
-        payload = {"posts": posts_map}
-        logger.info(f"Pushing to Missive: {payload}")
+        # In this endpoint, 'posts' is expected to be a LIST
+        payload = {"posts": messages}
+        logger.info(f"Pushing to Missive channel {cid}: {payload}")
         
         async with httpx.AsyncClient() as client:
             try:
@@ -50,6 +43,16 @@ class MissiveClient:
                 response.raise_for_status()
                 return response.json() if response.content else {"status": "success"}
             except httpx.HTTPStatusError as e:
+                # If the channel-specific endpoint fails with 404, fallback to global
+                if e.response.status_code == 404:
+                    logger.warning("Channel-specific endpoint not found, falling back to global /posts")
+                    global_url = f"{self.base_url}/posts"
+                    # For global endpoint, 'posts' must be a key-value object
+                    posts_map = {msg.get("external_id") or f"msg_{int(time.time())}": msg for msg in messages}
+                    global_payload = {"posts": posts_map}
+                    resp = await client.post(global_url, json=global_payload, headers=self.headers)
+                    resp.raise_for_status()
+                    return resp.json() if resp.content else {"status": "success"}
                 raise e
 
 missive_client = MissiveClient()

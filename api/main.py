@@ -111,6 +111,7 @@ async def handle_sendblue_incoming(
     # Extract number and content from flexible fields
     from_number = payload.from_number or payload.number
     message_content = payload.body or payload.content
+    to_number = payload.sendblue_number or "Sendblue" # Your own number or channel name
 
     if not from_number:
         logger.error("No phone number found in Sendblue payload")
@@ -130,10 +131,10 @@ async def handle_sendblue_incoming(
             "text": message_content,
             "notification": message_content[:100],
             "from_handle": from_number,
-            "to_handle": ["Sendblue"],
+            "to_handle": [to_number],
         }
         
-        response = await missive_client.push_messages([missive_msg])
+        response = await missive_client.push_messages([missive_msg], settings.missive_channel_id)
         logger.info("Successfully pushed message to Missive")
         return {"status": "success", "missive_response": response}
     except Exception as e:

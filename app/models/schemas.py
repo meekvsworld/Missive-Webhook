@@ -25,6 +25,7 @@ class SendblueIncomingPayload(BaseModel):
     # Sendblue can send different field names depending on the event
     number: Optional[str] = None
     from_number: Optional[str] = None
+    sendblue_number: Optional[str] = None
     content: Optional[str] = None
     body: Optional[str] = None
     status: str
