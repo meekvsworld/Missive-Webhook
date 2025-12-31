@@ -6,7 +6,8 @@ class MissiveClient:
     """Client for interacting with the Missive API."""
 
     def __init__(self):
-        self.base_url = "https://api.missiveapp.com/v1"
+        # Use the public.missiveapp.com base URL as per documentation
+        self.base_url = "https://public.missiveapp.com/v1"
         self.headers = {
             "Authorization": f"Bearer {settings.missive_api_token}",
             "Content-Type": "application/json",
@@ -22,9 +23,6 @@ class MissiveClient:
             dict: The API response.
         """
         url = f"{self.base_url}/posts"
-        # The Missive API expects a 'posts' key with the list of messages
-        # and each message should have the channel_id if not already handled
-        # by the specific channel endpoint.
         for msg in messages:
             if "channel_id" not in msg:
                 msg["channel_id"] = settings.missive_channel_id
@@ -32,9 +30,17 @@ class MissiveClient:
         payload = {"posts": messages}
         
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=self.headers)
-            response.raise_for_status()
-            return response.json()
+            try:
+                response = await client.post(url, json=payload, headers=self.headers)
+                if response.status_code != 201 and response.status_code != 200:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Missive API error: {response.status_code} - {response.text}")
+                response.raise_for_status()
+                return response.json() if response.content else {"status": "success"}
+            except httpx.HTTPStatusError as e:
+                # Re-raise to be caught by the caller
+                raise e
 
 missive_client = MissiveClient()
 

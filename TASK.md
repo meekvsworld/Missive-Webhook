@@ -15,4 +15,5 @@
 - [x] Improve app resilience for Vercel startup <!-- id: 8 -->
 - [x] Fix Python import paths for Vercel deployment <!-- id: 9 -->
 - [x] Make Missive outgoing handler more flexible with payload parsing <!-- id: 10 -->
+- [x] Correct Missive API base URL to public.missiveapp.com <!-- id: 11 -->
 
