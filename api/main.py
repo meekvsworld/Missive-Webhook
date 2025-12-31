@@ -125,14 +125,19 @@ async def handle_sendblue_incoming(
     logger.info(f"Processing message from {from_number}")
 
     try:
-        # Missive expects either 'text', 'markdown' or 'attachments' in the message
-        # AND it requires 'notification' as a top-level property of the message object.
+        # Missive requires 'notification' as an object with 'title' and/or 'body'
+        # and one of 'text', 'markdown' or 'attachments'.
+        # For Custom Channels, the target field is 'channel'.
         missive_msg = {
             "external_id": payload.message_handle or f"sb_{payload.date_sent or 'unknown'}",
             "text": message_content,
-            "notification": message_content[:100],
+            "notification": {
+                "title": from_number,
+                "body": message_content[:100]
+            },
             "from_handle": from_number,
             "to_handle": [to_number],
+            "channel": settings.missive_channel_id
         }
         
         response = await missive_client.push_messages([missive_msg])

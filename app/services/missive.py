@@ -32,12 +32,9 @@ class MissiveClient:
         # Missive expects a JSON object with a "posts" key.
         # The value of "posts" must be a dictionary where:
         # - The keys are the external_ids.
-        # - The values are the message objects (which must include channel_id).
+        # - The values are the message objects (which must include the target like 'channel' or 'conversation').
         posts_dict = {}
         for msg in messages:
-            if "channel_id" not in msg:
-                msg["channel_id"] = settings.missive_channel_id
-            
             ext_id = msg.get("external_id")
             if not ext_id:
                 ext_id = f"sb_{int(time.time())}"
