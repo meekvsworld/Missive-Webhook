@@ -18,4 +18,5 @@
 - [x] Correct Missive API base URL to public.missiveapp.com <!-- id: 11 -->
 - [x] Fix Missive 'posts' payload structure to be a key-value object <!-- id: 12 -->
 - [x] Fix Missive 'posts' validation by adding required 'notification' and 'text' fields <!-- id: 13 -->
+- [x] Flatten Missive payload to match /v1/posts single endpoint requirements <!-- id: 14 -->
 

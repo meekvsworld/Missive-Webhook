@@ -26,27 +26,25 @@ class MissiveClient:
         Returns:
             dict: The API response.
         """
-        # Global posts endpoint
+        # Option A: Single post endpoint (FLAT payload)
         url = f"{self.base_url}/posts"
         
-        # Missive expects a JSON object with a "posts" key.
-        # The value of "posts" must be a dictionary where:
-        # - The keys are the external_ids.
-        # - The values are the message objects (which must include the target like 'channel' or 'conversation').
-        posts_dict = {}
-        for msg in messages:
-            ext_id = msg.get("external_id")
-            if not ext_id:
-                ext_id = f"sb_{int(time.time())}"
-            
-            posts_dict[ext_id] = msg
+        if not messages:
+            return {"status": "ignored", "reason": "no messages"}
+
+        # We take the first message and send it as a flat object
+        # since each Sendblue webhook represents one message.
+        message_to_push = messages[0]
         
-        payload = {"posts": posts_dict}
-        logger.info(f"Final push to Missive global /posts: {payload}")
+        # Ensure 'channel' is set if not already present
+        if "channel" not in message_to_push:
+            message_to_push["channel"] = settings.missive_channel_id
+        
+        logger.info(f"Pushing FLAT payload to Missive /v1/posts: {message_to_push}")
         
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.post(url, json=payload, headers=self.headers)
+                response = await client.post(url, json=message_to_push, headers=self.headers)
                 if response.status_code != 201 and response.status_code != 200:
                     logger.error(f"Missive API error: {response.status_code} - {response.text}")
                 response.raise_for_status()
