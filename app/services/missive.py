@@ -23,11 +23,20 @@ class MissiveClient:
             dict: The API response.
         """
         url = f"{self.base_url}/posts"
+        
+        # Missive expects 'posts' to be a key-value object (dict), 
+        # where keys are the external_ids.
+        posts_map = {}
+        import time
         for msg in messages:
             if "channel_id" not in msg:
                 msg["channel_id"] = settings.missive_channel_id
+            
+            # Use external_id as the key, falling back to a timestamp if missing
+            ext_id = msg.get("external_id") or f"msg_{int(time.time())}"
+            posts_map[ext_id] = msg
         
-        payload = {"posts": messages}
+        payload = {"posts": posts_map}
         
         async with httpx.AsyncClient() as client:
             try:
@@ -39,7 +48,6 @@ class MissiveClient:
                 response.raise_for_status()
                 return response.json() if response.content else {"status": "success"}
             except httpx.HTTPStatusError as e:
-                # Re-raise to be caught by the caller
                 raise e
 
 missive_client = MissiveClient()
