@@ -129,6 +129,7 @@ async def handle_sendblue_incoming(
         missive_msg = {
             "external_id": payload.message_handle or f"sb_{payload.date_sent or 'unknown'}",
             "text": message_content,
+            "body": message_content, # Redundant but safe
             "notification": message_content[:100],
             "from_handle": from_number,
             "to_handle": [to_number],

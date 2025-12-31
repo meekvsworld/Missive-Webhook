@@ -27,13 +27,23 @@ class MissiveClient:
         Returns:
             dict: The API response.
         """
+        url = f"{self.base_url}/posts"
         cid = channel_id or settings.missive_channel_id
-        # Use the channel-specific endpoint for custom channels
-        url = f"{self.base_url}/channels/{cid}/posts"
         
-        # In this endpoint, 'posts' is expected to be a LIST
-        payload = {"posts": messages}
-        logger.info(f"Pushing to Missive channel {cid}: {payload}")
+        # For the global /posts endpoint, 'posts' must be a key-value object
+        # where keys are the external_ids and each object MUST contain the channel_id.
+        posts_map = {}
+        for msg in messages:
+            # Ensure channel_id is inside the message
+            if "channel_id" not in msg:
+                msg["channel_id"] = cid
+            
+            # Use external_id as the key
+            ext_id = msg.get("external_id") or f"msg_{int(time.time())}"
+            posts_map[ext_id] = msg
+        
+        payload = {"posts": posts_map}
+        logger.info(f"Pushing to Missive global /posts: {payload}")
         
         async with httpx.AsyncClient() as client:
             try:
@@ -43,16 +53,6 @@ class MissiveClient:
                 response.raise_for_status()
                 return response.json() if response.content else {"status": "success"}
             except httpx.HTTPStatusError as e:
-                # If the channel-specific endpoint fails with 404, fallback to global
-                if e.response.status_code == 404:
-                    logger.warning("Channel-specific endpoint not found, falling back to global /posts")
-                    global_url = f"{self.base_url}/posts"
-                    # For global endpoint, 'posts' must be a key-value object
-                    posts_map = {msg.get("external_id") or f"msg_{int(time.time())}": msg for msg in messages}
-                    global_payload = {"posts": posts_map}
-                    resp = await client.post(global_url, json=global_payload, headers=self.headers)
-                    resp.raise_for_status()
-                    return resp.json() if resp.content else {"status": "success"}
                 raise e
 
 missive_client = MissiveClient()
