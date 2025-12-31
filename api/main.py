@@ -85,29 +85,52 @@ async def handle_missive_outgoing(
 
 @app.post("/sendblue/incoming")
 async def handle_sendblue_incoming(
-    payload: SendblueIncomingPayload,
+    request: Request,
     _=Depends(verify_sendblue_secret)
 ):
     """Handles incoming messages from Sendblue and pushes them to Missive."""
+    try:
+        body = await request.json()
+        logger.info(f"Received Sendblue payload: {body}")
+        payload = SendblueIncomingPayload(**body)
+    except Exception as e:
+        logger.error(f"Failed to parse Sendblue payload: {str(e)}")
+        raw_body = await request.body()
+        logger.error(f"Raw Sendblue body: {raw_body.decode()}")
+        raise HTTPException(status_code=422, detail=f"Invalid payload: {str(e)}")
+
     if not settings.missive_api_token or not settings.missive_channel_id:
         logger.error("Missive API credentials missing")
         raise HTTPException(status_code=500, detail="Missive credentials not configured")
 
-    logger.info(f"Received incoming message from Sendblue from: {payload.number}")
-    
-    # We only care about RECEIVED messages (not our own outbound messages if Sendblue loops them back)
+    # We only care about RECEIVED messages
     if payload.is_outbound:
         logger.info("Ignoring outbound message from Sendblue")
         return {"status": "ignored"}
 
+    # Extract number and content from flexible fields
+    from_number = payload.from_number or payload.number
+    message_content = payload.body or payload.content
+
+    if not from_number:
+        logger.error("No phone number found in Sendblue payload")
+        raise HTTPException(status_code=400, detail="Phone number not found")
+    
+    if not message_content:
+        logger.error("No message content found in Sendblue payload")
+        # Don't fail completely, just ignore empty messages
+        return {"status": "ignored", "reason": "empty content"}
+
+    logger.info(f"Processing message from {from_number}")
+
     try:
         # notification is required, and one of text/markdown/attachments is required
         missive_msg = {
-            "external_id": payload.message_handle or f"sb_{payload.date_sent}",
-            "text": payload.content,
-            "notification": payload.content[:100], # First 100 chars for the notification
-            "from_handle": payload.number,
-            "to_handle": ["Sendblue"], # Placeholder for the receiving channel
+            "external_id": payload.message_handle or f"sb_{payload.date_sent or 'unknown'}",
+            "text": message_content,
+            "notification": message_content[:100],
+            "from_handle": from_number,
+            "to_handle": ["Sendblue"],
         }
         
         response = await missive_client.push_messages([missive_msg])

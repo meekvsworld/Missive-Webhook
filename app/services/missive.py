@@ -1,6 +1,10 @@
 import httpx
+import time
+import logging
 from typing import List, Optional
 from app.utils.config import settings
+
+logger = logging.getLogger(__name__)
 
 class MissiveClient:
     """Client for interacting with the Missive API."""
@@ -27,7 +31,6 @@ class MissiveClient:
         # Missive expects 'posts' to be a key-value object (dict), 
         # where keys are the external_ids.
         posts_map = {}
-        import time
         for msg in messages:
             if "channel_id" not in msg:
                 msg["channel_id"] = settings.missive_channel_id
@@ -37,13 +40,12 @@ class MissiveClient:
             posts_map[ext_id] = msg
         
         payload = {"posts": posts_map}
+        logger.info(f"Pushing to Missive: {payload}")
         
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(url, json=payload, headers=self.headers)
                 if response.status_code != 201 and response.status_code != 200:
-                    import logging
-                    logger = logging.getLogger(__name__)
                     logger.error(f"Missive API error: {response.status_code} - {response.text}")
                 response.raise_for_status()
                 return response.json() if response.content else {"status": "success"}

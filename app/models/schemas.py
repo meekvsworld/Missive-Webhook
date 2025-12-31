@@ -22,8 +22,11 @@ class MissiveOutgoingPayload(BaseModel):
 
 # Sendblue Schemas
 class SendblueIncomingPayload(BaseModel):
-    number: str
-    content: str
+    # Sendblue can send different field names depending on the event
+    number: Optional[str] = None
+    from_number: Optional[str] = None
+    content: Optional[str] = None
+    body: Optional[str] = None
     status: str
     message_handle: Optional[str] = None
     date_sent: Optional[str] = None
