@@ -17,4 +17,5 @@
 - [x] Make Missive outgoing handler more flexible with payload parsing <!-- id: 10 -->
 - [x] Correct Missive API base URL to public.missiveapp.com <!-- id: 11 -->
 - [x] Fix Missive 'posts' payload structure to be a key-value object <!-- id: 12 -->
+- [x] Fix Missive 'posts' validation by adding required 'notification' and 'text' fields <!-- id: 13 -->
 

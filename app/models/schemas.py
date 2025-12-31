@@ -32,7 +32,8 @@ class SendblueIncomingPayload(BaseModel):
 # Missive API Schemas for Pushing
 class MissiveExternalMessage(BaseModel):
     external_id: str
-    body: str
+    text: str
+    notification: str
     from_handle: str
     to_handle: List[str]
     delivered_at: Optional[int] = None # Unix timestamp

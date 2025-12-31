@@ -101,11 +101,13 @@ async def handle_sendblue_incoming(
         return {"status": "ignored"}
 
     try:
+        # notification is required, and one of text/markdown/attachments is required
         missive_msg = {
             "external_id": payload.message_handle or f"sb_{payload.date_sent}",
-            "body": payload.content,
+            "text": payload.content,
+            "notification": payload.content[:100], # First 100 chars for the notification
             "from_handle": payload.number,
-            "to_handle": ["Sendblue"], # Placeholder or actual Sendblue number if known
+            "to_handle": ["Sendblue"], # Placeholder for the receiving channel
         }
         
         response = await missive_client.push_messages([missive_msg])
